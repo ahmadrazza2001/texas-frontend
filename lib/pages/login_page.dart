@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:texasmobiles/api/auth_api.dart';
+import 'package:texasmobiles/pages/signup_page.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -9,6 +10,11 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  void handleSignup() async {
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => SignupPage()));
+  }
 
   void handleLogin() async {
     String email = _emailController.text.trim();
@@ -46,8 +52,11 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login', style: TextStyle(color: Colors.white),),
-        backgroundColor: Colors.green,
+        title: Text(
+          'Texas Login',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.orangeAccent,
       ),
       body: Container(
         color: Colors.black,
@@ -56,8 +65,11 @@ class _LoginPageState extends State<LoginPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Welcome Back!',
-              style: TextStyle(fontSize: 28, color: Colors.green, fontWeight: FontWeight.bold),
+              'Texas Mobiles',
+              style: TextStyle(
+                  fontSize: 28,
+                  color: Colors.orangeAccent,
+                  fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 40),
             TextField(
@@ -65,12 +77,9 @@ class _LoginPageState extends State<LoginPage> {
               style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Email',
-                labelStyle: TextStyle(color: Colors.green),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.green),
-                ),
+                labelStyle: TextStyle(color: Colors.orangeAccent),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.green),
+                  borderSide: BorderSide(color: Colors.orangeAccent),
                 ),
               ),
             ),
@@ -80,12 +89,9 @@ class _LoginPageState extends State<LoginPage> {
               style: TextStyle(color: Colors.white),
               decoration: const InputDecoration(
                 labelText: 'Password',
-                labelStyle: TextStyle(color: Colors.green),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.green),
-                ),
+                labelStyle: TextStyle(color: Colors.orangeAccent),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.green),
+                  borderSide: BorderSide(color: Colors.orangeAccent),
                 ),
               ),
               obscureText: true,
@@ -93,11 +99,29 @@ class _LoginPageState extends State<LoginPage> {
             SizedBox(height: 30),
             ElevatedButton(
               onPressed: handleLogin,
-              child: Text('Login', style: TextStyle(color: Colors.white),),
+              child: Text(
+                'Login',
+                style: TextStyle(color: Colors.white),
+              ),
               style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(Colors.green),
-                padding: MaterialStateProperty.all(EdgeInsets.symmetric(vertical: 10.0, horizontal: 50.0)),
+                backgroundColor: MaterialStateProperty.all(Colors.orangeAccent),
+                padding: MaterialStateProperty.all(
+                    EdgeInsets.symmetric(vertical: 20.0, horizontal: 40.0)),
                 textStyle: MaterialStateProperty.all(TextStyle(fontSize: 18)),
+              ),
+            ),
+            SizedBox(
+              height: 20,
+            ),
+            ElevatedButton(
+              onPressed: handleSignup,
+              child: Text(
+                'create a new account',
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(Colors.black),
+                textStyle: MaterialStateProperty.all(TextStyle(fontSize: 15)),
               ),
             ),
           ],

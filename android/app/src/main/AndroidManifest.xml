@@ -1,11 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.tryandbuy">
+    package="com.example.texasmobiles">
 
     <uses-sdk android:minSdkVersion="24" />
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-feature android:name="android.hardware.camera.ar" android:required="true"/>
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="true"/>
     <uses-feature
@@ -13,7 +15,7 @@
         android:required="false" />
 
     <application
-        android:label="tryandbuy"
+        android:label="texasmobiles"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
@@ -28,12 +30,17 @@
 
             <meta-data android:name="io.flutter.embedding.android.NormalTheme" android:resource="@style/NormalTheme"/>
             <meta-data android:name="com.google.ar.core" android:value="required"/>
-
+             
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <meta-data
+        android:name="com.google.android.geo.API_KEY"
+        android:value="AIzaSyB4jd8lTIK7_uLKoxXa7C2plI4KAvizw88"/>
+
 
         <meta-data
             android:name="flutterEmbedding"

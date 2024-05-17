@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:texasmobiles/api/network_util.dart';
 import 'package:texasmobiles/pages/login_page.dart';
 import 'package:texasmobiles/pages/new_product_page.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -38,7 +37,7 @@ class _VendorScreenState extends State<VendorScreen> {
     _isLoading = true;
     String? token = await FlutterSecureStorage().read(key: 'authToken');
     final response = await NetworkUtil.tryRequest(
-      '/api/v1/product/myPublicProducts',
+      '/api/v1/product/myProducts',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -46,16 +45,25 @@ class _VendorScreenState extends State<VendorScreen> {
     );
 
     if (response != null && response.statusCode == 200) {
-      setState(() {
-        _products = json.decode(response.body)['body'];
-        _isLoading = false;
-      });
+      try {
+        var decodedResponse = json.decode(response.body);
+        if (decodedResponse != null && decodedResponse['body'] != null) {
+          setState(() {
+            _products = decodedResponse['body'];
+            _isLoading = false;
+          });
+        } else {
+          print('No products found in the response');
+        }
+      } catch (e) {
+        print('Error parsing products: $e');
+      }
     } else {
-      setState(() {
-        _isLoading = false;
-      });
-      print('Failed to fetch products');
+      print('Failed to fetch products, status code: ${response?.statusCode}');
     }
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   Future<void> _fetchOrders() async {
@@ -117,27 +125,28 @@ class _VendorScreenState extends State<VendorScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text('Products'),
+        title: Text('All Devices'),
         elevation: 0,
         actions: <Widget>[
           IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: _fetchProducts,
-          ),
-          IconButton(
-            icon: Icon(Icons.add),
+            icon: Icon(
+              Icons.add,
+            ),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => NewProductPage()),
               );
             },
           ),
+          SizedBox(
+            width: 10,
+          )
         ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _products.isEmpty
-              ? Center(child: Text("You don't have any products yet"))
+              ? Center(child: Text("You don't have any device yet"))
               : ListView.builder(
                   itemCount: _products.length,
                   itemBuilder: (context, index) {
@@ -224,6 +233,9 @@ class _VendorScreenState extends State<VendorScreen> {
             icon: Icon(Icons.refresh),
             onPressed: _fetchOrders,
           ),
+          SizedBox(
+            width: 10,
+          )
         ],
       ),
       body: _isLoading
@@ -390,10 +402,10 @@ class _VendorScreenState extends State<VendorScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Try'nBuy",
-          style: TextStyle(color: Colors.orangeAccent),
+          "Texas Mobiles",
+          style: TextStyle(color: Colors.black),
         ),
-        backgroundColor: Colors.black87,
+        backgroundColor: Colors.orangeAccent,
         automaticallyImplyLeading: false,
       ),
       body: IndexedStack(
@@ -403,8 +415,8 @@ class _VendorScreenState extends State<VendorScreen> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.store),
-            label: 'Products',
+            icon: Icon(Icons.phone_android_rounded),
+            label: 'Devices',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.list),

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:texasmobiles/api/network_util.dart';
 import 'package:texasmobiles/pages/login_page.dart';
 import 'package:texasmobiles/pages/my_orders.dart';
 import 'package:texasmobiles/pages/new_order.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:texasmobiles/pages/productDetails.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -17,6 +17,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   int _currentIndex = 0;
   Map<String, dynamic> _profile = {};
+  String _selectedCondition = 'new';
   Map<String, dynamic> _cart = {};
   bool _isVendorRequestActive = false;
   final FlutterSecureStorage _storage = FlutterSecureStorage();
@@ -141,128 +142,172 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Widget _navigationTab() {
+    return Container(
+      color: Colors.orange[50],
+      height: 50,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _conditionButton('New', 'new'),
+          _conditionButton('Used', 'used'),
+        ],
+      ),
+    );
+  }
+
+  Widget _conditionButton(String title, String condition) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _selectedCondition == condition
+            ? Colors.orangeAccent
+            : Colors.orange[50],
+      ),
+      onPressed: () {
+        setState(() {
+          _selectedCondition = condition;
+        });
+      },
+      child: Text(title),
+    );
+  }
+
   Widget _homeContent() {
+    // Adding a filter directly in the builder to handle conditions dynamically
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: 5),
-        _isLoading ? CircularProgressIndicator() : _buildMainCarousel(),
+        _navigationTab(),
         SizedBox(height: 10),
         Padding(
           padding: EdgeInsets.all(8.0),
-          child: Text('New Arrivals',
+          child: Text('Latest Ads',
               style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontSize: 20,
                   fontWeight: FontWeight.bold)),
         ),
-        Container(
-          height: 330,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: _products.length,
-            itemBuilder: (context, index) {
-              var product = _products[index];
-              return _buildProductCard(
-                product['title'],
-                product['price'].toString(),
-                product['images'][0],
-                product['_id'].toString(),
-              );
-            },
-          ),
+        Expanded(
+          child: _isLoading
+              ? Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                  itemCount: _products.length,
+                  itemBuilder: (context, index) {
+                    var product = _products[index];
+                    if (product['condition'] == _selectedCondition) {
+                      // Ensure product has the condition and it matches
+                      // Check if product contains all required fields
+                      if (product.containsKey('images') &&
+                          product['images'].isNotEmpty &&
+                          product.containsKey('userId') &&
+                          product['userId'].containsKey('shopAddress')) {
+                        return _buildProductTile(
+                            product['title'],
+                            product['price'].toString(),
+                            product['images']
+                                [0], // Assuming 'images' is a list and not null
+                            product['_id'],
+                            product['userId'][
+                                'shopAddress'], // Assuming 'userId' is a map with 'shopAddress'
+                            product[
+                                'productStatus']); // Check if 'productStatus' exists
+                      }
+                    }
+                    return SizedBox(); // Return an empty box for non-matching products or incomplete data
+                  },
+                ),
         ),
         SizedBox(height: 20),
       ],
     );
   }
 
-  Widget _buildProductCard(
-      String productName, String price, String imageUrl, String productId) {
-    return SizedBox(
-      width: 230,
-      child: Card(
-        color: Colors.green,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.all(5),
-              width: double.infinity,
-              height: 150,
-              child: Image.network(imageUrl, fit: BoxFit.cover),
+  Widget _buildProductTile(String productName, String price, String imageUrl,
+      String productId, String userId, String productStatus) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => ProductDetailPage(productId: productId)));
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.orange[50],
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          child: ListTile(
+            leading: Image.network(
+              imageUrl,
+              width: 55,
+              height: 55,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Icon(Icons.error),
             ),
-            SizedBox(height: 5),
-            Text(productName,
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white)),
-            Text('PKR $price',
-                style: TextStyle(fontSize: 14, color: Colors.black)),
-            SizedBox(height: 10),
-            ElevatedButton.icon(
-              onPressed: () =>
-                  addToCart(productId, productName, price, imageUrl),
-              icon: Icon(Icons.add_shopping_cart, color: Colors.black),
-              label: Text('Add to cart', style: TextStyle(color: Colors.black)),
+            title: Text(productName),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('PKR $price',
+                    style: TextStyle(
+                        color: Colors.orange[700],
+                        fontWeight: FontWeight.bold)),
+                SizedBox(height: 5),
+                Row(
+                  children: [
+                    Icon(Icons.sentiment_very_satisfied,
+                        size: 16, color: Colors.green),
+                    SizedBox(width: 4),
+                    Text('${productStatus}',
+                        style: TextStyle(color: Colors.green)),
+                  ],
+                ),
+              ],
             ),
-          ],
+            trailing: IconButton(
+                icon: Icon(Icons.add),
+                onPressed: () =>
+                    addToCart(productId, productName, price, imageUrl)),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMainCarousel() {
-    return CarouselSlider(
-      options: CarouselOptions(
-        height: 190,
-        autoPlay: true,
-        autoPlayInterval: Duration(seconds: 3),
-        autoPlayAnimationDuration: Duration(milliseconds: 800),
-        autoPlayCurve: Curves.fastOutSlowIn,
-        pauseAutoPlayOnTouch: true,
-        viewportFraction: 0.8,
-      ),
-      items: _products.map((product) {
-        return Builder(builder: (BuildContext context) {
-          return Container(
-            width: MediaQuery.of(context).size.width,
-            margin: EdgeInsets.symmetric(horizontal: 5.0),
-            decoration: BoxDecoration(color: Colors.amber),
-            child: Image.network(product['images'][0], fit: BoxFit.cover),
-          );
-        });
-      }).toList(),
-    );
-  }
-
   Widget _cartContent() {
+    SizedBox(
+      height: 10,
+    );
+    Text('Cart',
+        style: TextStyle(
+            color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold));
     if (_cart.isEmpty) {
       return Center(
-        child: Text("Your cart is empty :(",
-            style: TextStyle(color: Colors.white, fontSize: 15)),
+        child: Text("Empty Cart",
+            style: TextStyle(color: Colors.black, fontSize: 18)),
       );
     } else {
       List<Widget> cartList = _cart.keys.map((key) {
         return Padding(
           padding: const EdgeInsets.all(2.0),
           child: Card(
-            color: Colors.grey[900],
+            color: Colors.orange[50],
             child: ListTile(
               leading:
                   Image.network(_cart[key]['imageUrl'], width: 50, height: 50),
               title: Text(_cart[key]['name'],
-                  style: TextStyle(color: Colors.white, fontSize: 12)),
+                  style: TextStyle(color: Colors.black, fontSize: 12)),
               subtitle: Text(
                   'PKR ${_cart[key]['totalPrice'].toStringAsFixed(2)}',
                   style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
+                      color: Colors.orangeAccent, fontWeight: FontWeight.bold)),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: Icon(Icons.remove, color: Colors.white),
+                    icon: Icon(Icons.remove, color: Colors.black),
                     onPressed: () {
                       if (_cart[key]['quantity'] > 1) {
                         setState(() {
@@ -276,9 +321,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
                   Text('${_cart[key]['quantity']}',
-                      style: TextStyle(color: Colors.white, fontSize: 16)),
+                      style:
+                          TextStyle(color: Colors.orangeAccent, fontSize: 16)),
                   IconButton(
-                    icon: Icon(Icons.add, color: Colors.white),
+                    icon: Icon(Icons.add, color: Colors.black),
                     onPressed: () {
                       setState(() {
                         _cart[key]['quantity'] += 1;
@@ -314,10 +360,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 );
               },
-              child: Text('Proceed to Checkout',
+              child: Text('Add Shipping Details',
                   style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.orangeAccent,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
               ),
             ),
@@ -347,7 +393,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(
                     fontSize: 23,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white)),
+                    color: Colors.orangeAccent)),
             Text('@${_profile['username'] ?? 'N/A'}',
                 style: TextStyle(fontSize: 13, color: Colors.grey)),
             Text('${_profile['email'] ?? 'N/A'}',
@@ -359,25 +405,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white)),
+                    color: Colors.black)),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ListTile(
-                  title: Text('Become a vendor:',
-                      style: TextStyle(fontSize: 16, color: Colors.white)),
+                  title: Text('Switch to vendor account:',
+                      style: TextStyle(fontSize: 16, color: Colors.black)),
                   trailing: Transform.scale(
                     scale: 0.75, // Adjust the size by changing the scale
                     child: Switch(
                       value: _isVendorRequestActive,
                       onChanged: _requestVendorStatus,
-                      activeColor: Colors.green,
+                      activeColor: Colors.orangeAccent,
                     ),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 20), // Space before logout button
+            SizedBox(height: 40), // Space before logout button
             Align(
               alignment: Alignment.center,
               child: ElevatedButton(
@@ -420,8 +466,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Texas Mobiles", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.green,
+        title: Text("TexasMobiles", style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.orangeAccent,
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
@@ -434,10 +480,9 @@ class _HomeScreenState extends State<HomeScreen> {
           )
         ],
       ),
-      backgroundColor: Colors.black,
       body: _buildContent(),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.orangeAccent,
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:texasmobiles/api/network_util.dart';
 import 'package:texasmobiles/pages/home_page.dart';
 
@@ -56,7 +55,8 @@ class _NewOrderPageState extends State<NewOrderPage> {
       orderCount++;
 
       if (response != null && response.statusCode == 201) {
-        print('Order for product $productId placed successfully: ${response.body}');
+        print(
+            'Order for product $productId placed successfully: ${response.body}');
         successfulOrders++;
       } else {
         print('Failed to place order for product $productId');
@@ -67,12 +67,10 @@ class _NewOrderPageState extends State<NewOrderPage> {
           Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => HomeScreen()),
-              ModalRoute.withName('/')
-          );
+              ModalRoute.withName('/'));
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Not all orders were successfully placed.'))
-          );
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Not all orders were successfully placed.')));
         }
       }
     });
@@ -82,8 +80,11 @@ class _NewOrderPageState extends State<NewOrderPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('New Order'),
-        backgroundColor: Colors.green,
+        title: Text(
+          'Shipping Details',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.orangeAccent,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
@@ -115,7 +116,7 @@ class _NewOrderPageState extends State<NewOrderPage> {
               onPressed: placeOrder,
               child: Text('Place Order', style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.orangeAccent,
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 20),
               ),
             ),

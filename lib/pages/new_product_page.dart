@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
-import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:texasmobiles/api/network_util.dart';
 
@@ -14,15 +13,20 @@ class _NewProductPageState extends State<NewProductPage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _batteryController = TextEditingController();
   final TextEditingController _keywordsController = TextEditingController();
   String _productType = "Select Type";
+  String _condition = "Select Condition";
+
   final ImagePicker _picker = ImagePicker();
-  final CloudinaryPublic cloudinary = CloudinaryPublic('dicebox', 'trynbuy', cache: false);
+  final CloudinaryPublic cloudinary =
+      CloudinaryPublic('dicebox', 'trynbuy', cache: false);
   final FlutterSecureStorage _storage = FlutterSecureStorage();
   bool _isLoading = false;
-  List<String> productTypes = ['Headwear', 'Glasses', 'Facemask'];
+  List<String> productTypes = ['Mobile', 'Tablet', 'Laptop'];
+  List<String> productConditions = ['new', 'used'];
+
   List<String> imageUrls = [];
-  String? arImageUrl;
 
   void handleImageSelection() async {
     final List<XFile>? pickedFiles = await _picker.pickMultiImage();
@@ -30,7 +34,8 @@ class _NewProductPageState extends State<NewProductPage> {
       setState(() {
         _isLoading = true;
       });
-      List<Future> uploadTasks = pickedFiles.map((file) => uploadImage(file.path)).toList();
+      List<Future> uploadTasks =
+          pickedFiles.map((file) => uploadImage(file.path)).toList();
       await Future.wait(uploadTasks);
       setState(() {
         _isLoading = false;
@@ -41,7 +46,8 @@ class _NewProductPageState extends State<NewProductPage> {
   Future<void> uploadImage(String imagePath) async {
     try {
       CloudinaryResponse response = await cloudinary.uploadFile(
-        CloudinaryFile.fromFile(imagePath, resourceType: CloudinaryResourceType.Image),
+        CloudinaryFile.fromFile(imagePath,
+            resourceType: CloudinaryResourceType.Image),
       );
       imageUrls.add(response.secureUrl);
     } catch (e) {
@@ -49,29 +55,9 @@ class _NewProductPageState extends State<NewProductPage> {
     }
   }
 
-  void handleArImageSelection() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _isLoading = true;
-      });
-      try {
-        CloudinaryResponse response = await cloudinary.uploadFile(
-          CloudinaryFile.fromFile(pickedFile.path, resourceType: CloudinaryResourceType.Image),
-        );
-        arImageUrl = response.secureUrl;
-      } catch (e) {
-        print('Error uploading AR image: $e');
-      }
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
   Future<void> createProduct() async {
-    if (imageUrls.isEmpty || arImageUrl == null) {
-      print('Please upload all images before creating the product.');
+    if (imageUrls.isEmpty) {
+      print('Please upload some images before creating the product.');
       return;
     }
 
@@ -91,9 +77,10 @@ class _NewProductPageState extends State<NewProductPage> {
         'title': _titleController.text,
         'description': _descriptionController.text,
         'price': _priceController.text,
-        'keywords': _keywordsController.text.split(',').map((s) => s.trim()).toList(),
+        'battryHealth': _batteryController.text,
+        'keywords':
+            _keywordsController.text.split(',').map((s) => s.trim()).toList(),
         'images': imageUrls,
-        'arImage': [arImageUrl],
         'productType': _productType,
       },
     );
@@ -110,70 +97,100 @@ class _NewProductPageState extends State<NewProductPage> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create New Product'),
+        title: Text(
+          "New Device",
+          style: TextStyle(color: Colors.black),
+        ),
+        backgroundColor: Colors.orangeAccent,
+        // automaticallyImplyLeading: false,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            children: <Widget>[
-              TextField(
-                controller: _titleController,
-                decoration: InputDecoration(labelText: 'Title'),
-              ),
-              TextField(
-                controller: _descriptionController,
-                decoration: InputDecoration(labelText: 'Description'),
-              ),
-              TextField(
-                controller: _priceController,
-                decoration: InputDecoration(labelText: 'Price'),
-              ),
-              TextField(
-                controller: _keywordsController,
-                decoration: InputDecoration(labelText: 'Keywords (comma separated)'),
-              ),
-              DropdownButtonFormField<String>(
-                value: _productType != "Select Type" ? _productType : null,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _productType = newValue!;
-                  });
-                },
-                items: productTypes.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                decoration: InputDecoration(
-                  labelText: 'Product Type',
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                  children: <Widget>[
+                    TextField(
+                      controller: _titleController,
+                      decoration: InputDecoration(labelText: 'Title or Name'),
+                    ),
+                    TextField(
+                      controller: _descriptionController,
+                      decoration:
+                          InputDecoration(labelText: 'Brief Description'),
+                    ),
+                    TextField(
+                      controller: _priceController,
+                      decoration: InputDecoration(labelText: 'Product Price'),
+                    ),
+                    TextField(
+                      controller: _batteryController,
+                      decoration:
+                          InputDecoration(labelText: 'Battery Health in %'),
+                    ),
+                    DropdownButtonFormField<String>(
+                      value:
+                          _condition != "Select Condition" ? _condition : null,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _condition = newValue!;
+                        });
+                      },
+                      items: productConditions
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      decoration: InputDecoration(
+                        labelText: 'Select Condition',
+                      ),
+                    ),
+                    TextField(
+                      controller: _keywordsController,
+                      decoration: InputDecoration(
+                          labelText: 'Keywords (separate with comma)'),
+                    ),
+                    DropdownButtonFormField<String>(
+                      value:
+                          _productType != "Select Type" ? _productType : null,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _productType = newValue!;
+                        });
+                      },
+                      items: productTypes
+                          .map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                      decoration: InputDecoration(
+                        labelText: 'Select Type',
+                      ),
+                    ),
+                    SizedBox(height: 30),
+                    ElevatedButton(
+                      onPressed: handleImageSelection,
+                      child: Text('Select Images'),
+                    ),
+                    SizedBox(height: 50),
+                    ElevatedButton(
+                      onPressed: createProduct,
+                      child: Text('Create'),
+                      // style: ButtonStyle(backgroundColor: black),
+                    ),
+                  ],
                 ),
               ),
-              ElevatedButton(
-                onPressed: handleImageSelection,
-                child: Text('Pick Images'),
-              ),
-              ElevatedButton(
-                onPressed: handleArImageSelection,
-                child: Text('Pick AR Image'),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: createProduct,
-                child: Text('Create Product'),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
 import 'package:texasmobiles/api/network_util.dart';
 import 'package:texasmobiles/pages/login_page.dart';
 import 'dart:convert';
@@ -212,9 +211,19 @@ class _AdminScreenState extends State<AdminScreen> {
                   itemBuilder: (context, index) {
                     var vendor = _vendors[index];
                     return Card(
+                      color: Colors.orange[50],
                       child: ListTile(
-                        title: Text(vendor['username']),
+                        title: Text(
+                          vendor['username'],
+                          style: TextStyle(color: Colors.orangeAccent),
+                        ),
                         subtitle: Text('Email: ${vendor['email']}'),
+                        trailing: ElevatedButton(
+                            onPressed: () {},
+                            child: Text(
+                              "Block",
+                              style: TextStyle(color: Colors.red),
+                            )),
                       ),
                     );
                   },

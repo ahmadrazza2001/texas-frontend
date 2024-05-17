@@ -62,13 +62,13 @@ class _MyOrdersState extends State<MyOrders> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('My Orders'),
-        backgroundColor: Colors.green,
+        title: Text('Orders History'),
+        backgroundColor: Colors.orangeAccent,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _orders.isEmpty
-              ? Center(child: Text("No orders found"))
+              ? Center(child: Text("No orders yet"))
               : ListView.builder(
                   itemCount: _orders.length,
                   itemBuilder: (context, index) {
@@ -85,7 +85,7 @@ class _MyOrdersState extends State<MyOrders> {
                             '#${order['_id'].substring(order['_id'].length - 5)}',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.green),
+                                color: Colors.orangeAccent),
                           ),
                           Text(
                             '${order['orderProductTitle']}',
@@ -101,11 +101,15 @@ class _MyOrdersState extends State<MyOrders> {
                           ),
                           Text(
                             '${order['orderStatus']}',
-                            style: TextStyle(color: Colors.green),
-                          ),
+                            style: TextStyle(
+                              color: order['orderStatus'] == 'completed'
+                                  ? Colors.green
+                                  : Colors.orangeAccent,
+                            ),
+                          )
                         ],
                       ),
-                      trailing: Text('Order Date: $formattedDate'),
+                      trailing: Text('Ordered on: $formattedDate'),
                     );
                   },
                 ),

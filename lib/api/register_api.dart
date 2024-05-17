@@ -2,19 +2,22 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class AuthApi {
+class SignupApi {
   static const List<String> hosts = [
     // 'http://192.168.1.11:5000',
     'http://192.168.1.132:5000',
     // 'http://127.0.0.1:5000'
   ];
-  static const String basePath = '/api/v1/auth/login';
+  static const String basePath = '/api/v1/auth/signup';
   static final storage = FlutterSecureStorage();
 
-  static Future<Map<String, dynamic>> login(
-    String email,
-    String password,
-  ) async {
+  static Future<Map<String, dynamic>> sigup(
+      String firstName,
+      String lastName,
+      String username,
+      String email,
+      String password,
+      String shopAddress) async {
     for (String host in hosts) {
       try {
         final url = '$host$basePath';
@@ -24,8 +27,12 @@ class AuthApi {
             'Content-Type': 'application/json; charset=UTF-8',
           },
           body: jsonEncode(<String, String>{
+            'firstName': firstName,
+            'lastName': lastName,
+            'username': username,
             'email': email,
             'password': password,
+            'shopAddress': shopAddress
           }),
         );
 
@@ -37,13 +44,13 @@ class AuthApi {
           await storage.write(key: 'userRole', value: userRole);
           return {'success': true, 'role': userRole};
         } else {
-          print('Failed to log in at $host: ${response.body}');
+          print('Failed to signup at $host: ${response.body}');
         }
       } catch (e) {
         print('Failed to connect to $host: $e');
       }
     }
 
-    return {'success': false, 'error': 'Unable to log in on any server'};
+    return {'success': false, 'error': 'Unable to create account'};
   }
 }

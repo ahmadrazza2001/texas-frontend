@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:carousel_slider/carousel_slider.dart';
-import 'package:texasmobiles/api/network_util.dart';
+import 'package:flutter/material.dart';
 import 'package:texasmobiles/pages/login_page.dart';
+import 'package:texasmobiles/api/network_util.dart';
+import 'package:texasmobiles/pages/productDetails.dart';
 
 class LandingScreen extends StatefulWidget {
   @override
@@ -12,6 +12,8 @@ class LandingScreen extends StatefulWidget {
 class _LandingScreenState extends State<LandingScreen> {
   List<dynamic> _products = [];
   bool _isLoading = true;
+  Map<String, String> _shopAddresses = {};
+  String _selectedCondition = 'new';
   int _currentIndex = 0;
 
   @override
@@ -24,8 +26,9 @@ class _LandingScreenState extends State<LandingScreen> {
     final response = await NetworkUtil.tryRequest('/api/v1/product/allProducts',
         headers: {'Content-Type': 'application/json'});
     if (response != null && response.statusCode == 200) {
+      List<dynamic> products = json.decode(response.body)['body'];
       setState(() {
-        _products = json.decode(response.body)['body'];
+        _products = products;
         _isLoading = false;
       });
     } else {
@@ -35,128 +38,177 @@ class _LandingScreenState extends State<LandingScreen> {
     }
   }
 
-  Widget _buildProductCard(
-      String productName, String price, String imageUrl, String productType) {
-    return SizedBox(
-      width: 220,
-      child: Card(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Image.network(imageUrl,
-                width: double.infinity, height: 150, fit: BoxFit.cover),
-            SizedBox(height: 5),
-            Text(productName,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Text(price, style: TextStyle(fontSize: 14, color: Colors.grey)),
-            SizedBox(height: 10),
-            ElevatedButton.icon(
+  Widget _buildProductTile(String productName, String price, String imageUrl,
+      String productId, String userId, String productStatus) {
+    return InkWell(
+      // Use InkWell for onTap functionality
+      onTap: () {
+        Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) => ProductDetailPage(productId: productId)));
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.orange[50],
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          child: ListTile(
+            leading: Image.network(
+              imageUrl,
+              width: 55,
+              height: 55,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Icon(Icons.error),
+            ),
+            title: Text(productName),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('PKR $price',
+                    style: TextStyle(
+                        color: Colors.orange[700],
+                        fontWeight: FontWeight.bold)),
+                SizedBox(height: 5),
+                // Row(
+                //   children: [
+                //     Icon(Icons.location_on, size: 16),
+                //     SizedBox(width: 4),
+                //     Text('${userId}'),
+                //   ],
+                // ),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.sentiment_very_satisfied,
+                      size: 16,
+                      color: Colors.green,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      '${productStatus}',
+                      style: TextStyle(color: Colors.green),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            trailing: IconButton(
+              icon: Icon(Icons.add),
               onPressed: () {
                 Navigator.push(context,
                     MaterialPageRoute(builder: (context) => LoginPage()));
               },
-              icon: Icon(Icons.add_shopping_cart),
-              label: Text('Add'),
-            )
-          ],
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMainCarousel() {
-    return CarouselSlider(
-      options: CarouselOptions(
-        height: 200.0,
-        autoPlay: true,
-        autoPlayInterval: Duration(seconds: 3),
-        autoPlayAnimationDuration: Duration(milliseconds: 800),
-        autoPlayCurve: Curves.fastOutSlowIn,
-        pauseAutoPlayOnTouch: true,
-        viewportFraction: 0.8,
+  Widget _navigationTab() {
+    return Container(
+      color: Colors.orange[50],
+      height: 50,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _conditionButton('New', 'new'),
+          _conditionButton('Used', 'used'),
+        ],
       ),
-      items: _products.map((product) {
-        String imageUrl = (product['images'] is List)
-            ? product['images'][0]
-            : product['images'];
-        return Builder(builder: (BuildContext context) {
-          return Container(
-            width: MediaQuery.of(context).size.width,
-            margin: EdgeInsets.symmetric(horizontal: 5.0),
-            decoration: BoxDecoration(color: Colors.amber),
-            child: Image.network(imageUrl, fit: BoxFit.cover),
-          );
+    );
+  }
+
+  Widget _conditionButton(String title, String condition) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: _selectedCondition == condition
+            ? Colors.orangeAccent
+            : Colors.orange[50],
+      ),
+      onPressed: () {
+        setState(() {
+          _selectedCondition = condition;
         });
-      }).toList(),
+      },
+      child: Text(title),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    List<dynamic> filteredProducts = _products
+        .where((product) => product['condition'] == _selectedCondition)
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Texas Mobiles"),
+        title: Text("TexasMobiles"),
         backgroundColor: Colors.orangeAccent,
+        automaticallyImplyLeading: false,
         actions: [
-          TextButton(
-              onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => LoginPage()));
-              },
-              child: Text('Login', style: TextStyle(color: Colors.black)))
+          IconButton(
+            icon: Icon(Icons.login),
+            onPressed: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => LoginPage()));
+            },
+          )
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 10),
-            _isLoading ? CircularProgressIndicator() : _buildMainCarousel(),
-            SizedBox(height: 20),
-            Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Text('New Arrivals',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            ),
-            Container(
-              height: 330,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: _products.map((product) {
-                  String imageUrl = (product['images'] is List)
-                      ? product['images'][0]
-                      : product['images'];
-
-                  String productType = product['productType'] ?? 'unknown';
-                  return _buildProductCard(product['title'],
-                      product['price'].toString(), imageUrl, productType);
-                }).toList(),
-              ),
-            )
-          ],
-        ),
+      body: Column(
+        children: [
+          _navigationTab(),
+          Expanded(
+            child: _isLoading
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    itemCount: filteredProducts.length,
+                    itemBuilder: (context, index) {
+                      var product = filteredProducts[index];
+                      return _buildProductTile(
+                          product['title'],
+                          product['price'].toString(),
+                          product['images'][0],
+                          product['_id'],
+                          product['userId']['shopAddress'],
+                          product['productStatus']);
+                    },
+                  ),
+          ),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => _onTapItem(context, index),
+        onTap: (int index) {
+          setState(() {
+            _currentIndex = index;
+          });
+          if (index == 1 || index == 2) {
+            Navigator.push(
+                context, MaterialPageRoute(builder: (context) => LoginPage()));
+          }
+        },
         items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart_checkout), label: 'Cart'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: 'Cart',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
         ],
-        selectedItemColor: Colors.amber[800],
+        selectedItemColor: Colors.orangeAccent,
+        unselectedItemColor: Colors.orange[100],
       ),
     );
-  }
-
-  void _onTapItem(BuildContext context, int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-    if (_currentIndex == 1 || _currentIndex == 2) {
-      Navigator.push(
-          context, MaterialPageRoute(builder: (context) => LoginPage()));
-    }
   }
 }
